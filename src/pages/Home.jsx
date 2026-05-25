@@ -1,11 +1,12 @@
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useLanguage } from '../context/LanguageContext'; // Pastikan path-nya benar
 
 const Home = () => {
   const navigate = useNavigate();
-  const [lang, setLang] = useState('ID'); // State untuk bahasa: 'ID' atau 'EN'
+  // Panggil state dan fungsi global dari context
+  const { lang, setLang } = useLanguage(); 
 
-  // Data Teks Multibahasa
+  // Data Teks Multibahasa tetap di sini
   const content = {
     ID: {
       welcome: "Halo, Selamat Datang!",

@@ -47,3 +47,14 @@ notes
 7. untuk spotlight tentang bejana reaktor dan sistem pendingin letaknya terlalu tidak pas, dimana gw bisa ganti sesuaikan dulu persentasenya baru yg fiks gw masukin ke kodenya
 8. biarkan user sampai di posisi scram dan biarkan scram selama 1-2 detik baru shutdown. jaid user merasakan kondisi scram
 9. dibagian kolom kanan yaitu camera pov, kontrol batang kendali, status reaktor, dan daya aktual reaktor dibuat fiks dimensi saja yaitu seukuran layar laptop jadi user tidak perlu scroll 
+
+PERHITUNGAN 
+1. daya aktual tidak keluar
+2. tidak ada kondisi scram
+3. dibagian grafik full tidak keluar : daya relativ vs waktu, profil reaktivitas, konsentrasi prekursor, dan periode reaktor 
+4. masih scram untuk simulatornya
+5. gambar untuk turnya belum
+6. perhitungannya backend belum selesai 
+7. translatenya belum bisa
+8. 3D nya belum bisa masih blank dan agak eror
+9. poles lagi biar tambah ciamik
