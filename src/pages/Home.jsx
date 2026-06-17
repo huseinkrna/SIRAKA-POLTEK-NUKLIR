@@ -1,3 +1,4 @@
+// src/pages/Home.jsx
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { useEffect } from 'react';
@@ -6,23 +7,23 @@ const Home = () => {
   const navigate = useNavigate();
   const { lang, setLang } = useLanguage();
 
-  // Aktifkan dark mode default
   useEffect(() => {
     document.documentElement.classList.add('dark');
   }, []);
 
-  // Data Teks Multibahasa
   const content = {
     ID: {
       welcome: "Halo, Selamat Datang!",
       subtitle: "simulator reaktor kartini",
       btnSim: "Simulasi",
+      btnGallery: "Galeri",
       btnTour: "Ikuti Tur"
     },
     EN: {
       welcome: "Hello, Welcome!",
       subtitle: "kartini reactor simulator",
       btnSim: "Simulation",
+      btnGallery: "Gallery",
       btnTour: "Take a Tour"
     }
   };
@@ -69,20 +70,33 @@ const Home = () => {
           {text.subtitle}
         </p>
         
+        {/* === TOMBOL DENGAN URUTAN BARU === */}
         <div className="flex flex-col md:flex-row gap-6 justify-center items-center">
+          
+          {/* 1. Ikuti Tur (tombol biasa) */}
+          <button 
+            onClick={() => navigate('/tour')}
+            className="w-44 border-2 border-white text-white px-6 py-2.5 font-semibold hover:bg-white hover:text-black transition-all duration-300 backdrop-blur-sm text-sm"
+          >
+            {text.btnTour}
+          </button>
+          
+          {/* 2. Simulasi (tombol utama, lebih besar & menonjol) */}
           <button 
             onClick={() => navigate('/simulator')}
-            className="w-48 border-2 border-white px-8 py-3 font-bold hover:bg-white hover:text-black transition-all duration-300 backdrop-blur-sm"
+            className="w-56 md:w-64 bg-white text-black px-8 py-4 font-bold text-lg rounded-lg shadow-[0_0_30px_rgba(255,255,255,0.3)] hover:shadow-[0_0_50px_rgba(255,255,255,0.5)] hover:scale-105 transition-all duration-300"
           >
             {text.btnSim}
           </button>
           
+          {/* 3. Galeri (tombol biasa) */}
           <button 
-            onClick={() => navigate('/tour')}
-            className="w-48 bg-white text-black px-8 py-3 font-bold hover:bg-gray-200 transition-all duration-300 shadow-xl"
+            onClick={() => navigate('/gallery')}
+            className="w-44 border-2 border-purple-400 text-purple-300 px-6 py-2.5 font-semibold hover:bg-purple-400 hover:text-black transition-all duration-300 backdrop-blur-sm text-sm"
           >
-            {text.btnTour}
+            {text.btnGallery}
           </button>
+          
         </div>
       </div>
 
