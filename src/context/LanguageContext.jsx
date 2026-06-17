@@ -1,11 +1,10 @@
-// src/context/LanguageContext.jsx
-import { createContext, useContext, useState } from "react";
+/* eslint-disable react-refresh/only-export-components */
+import { createContext, useContext, useState } from 'react';
 
 const LanguageContext = createContext();
 
 export const LanguageProvider = ({ children }) => {
-  const [lang, setLang] = useState("ID"); // ID atau EN
-
+  const [lang, setLang] = useState("ID");
   return (
     <LanguageContext.Provider value={{ lang, setLang }}>
       {children}

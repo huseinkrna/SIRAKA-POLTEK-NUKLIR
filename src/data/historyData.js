@@ -1,7 +1,5 @@
 // src/data/historyData.js
 
-// src/data/historyData.js
-
 export const historyData = [
   {
     id: "fase-1",
@@ -18,7 +16,7 @@ export const historyData = [
     title: "Saksi Bisu Radiasi Cherenkov",
     description: "Di dalam kedalaman air murni, reaksi berantai memancarkan cahaya biru yang khas. Ini adalah wujud nyata dari sains, tempat material diuji untuk berbagai kebutuhan industri dan medis.",
     technicalData: "Data Teknis: Menggunakan bahan bakar UZrH (Uranium Zirconium Hydride). Cahaya biru (Radiasi Cherenkov) terjadi karena partikel bermuatan bergerak lebih cepat dari kecepatan cahaya di dalam medium pendingin air ringan (H2O).",
-    imagePath: "/assets/images/sejarah/04-bahan-bakar-biru.jpeg", // Path pemanggilan yang benar
+    imagePath: "/assets/images/sejarah/04-bahan-bakar-biru.jpg", // Path pemanggilan yang benar
     imageAlt: "Penjelasan bahan bakar reaktor"
   },
   {

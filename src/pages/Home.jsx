@@ -1,9 +1,15 @@
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
+import { useEffect } from 'react';
 
 const Home = () => {
   const navigate = useNavigate();
   const { lang, setLang } = useLanguage();
+
+  // Aktifkan dark mode default
+  useEffect(() => {
+    document.documentElement.classList.add('dark');
+  }, []);
 
   // Data Teks Multibahasa
   const content = {
@@ -21,7 +27,6 @@ const Home = () => {
     }
   };
 
-  // Fallback: pastikan lang yang digunakan adalah 'ID' atau 'EN'
   const activeLang = (lang === 'ID' || lang === 'EN') ? lang : 'ID';
   const text = content[activeLang];
 
