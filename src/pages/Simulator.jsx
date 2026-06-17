@@ -19,15 +19,20 @@ export default function Simulator() {
   
   const [rods, setRods] = useState({ safe: 0.0, shim: 0.0, regulate: 0.0 });
   const [simData, setSimData] = useState({
-    time: 0, dayaRelatif: 1.0, dayaWatt: 1000, reaktivitas: 0, prekursor: [0,0,0,0,0,0]
+    time: 0, dayaRelatif: 1.0, dayaWatt: 0.1, reaktivitas: 0, prekursor: [0,0,0,0,0,0]
   });
+
+  // ============================================================
+  // STATE BARU: Menyimpan riwayat data untuk visualisasi grafik
+  // ============================================================
+  const [chartHistory, setChartHistory] = useState([]);
 
   const activeKeys = useRef(new Set());
   const [uiKeys, setUiKeys] = useState({}); 
 
   const alarmAudio = useRef(null);
   
-  // REFERENSI SCRAM (Latching System untuk menahan SCRAM sampai 0%)
+  // REFERENSI SCRAM (Latching System untuk menahan SCRAM sampai benar-benar aman)
   const isScrammedRef = useRef(false);
   const tripTimeRef = useRef(null); 
   const [isTripUI, setIsTripUI] = useState(false); // State khusus untuk render UI
@@ -44,7 +49,7 @@ export default function Simulator() {
       if (!showAlert) setShowAlert(true); 
       alarmAudio.current?.play().catch(() => {});
     } else {
-      setShowAlert(false); // Tutup popup otomatis saat SCRAM selesai
+      setShowAlert(false); // Tutup popup otomatis saat SCRAM selesai aman
       if (alarmAudio.current) {
         alarmAudio.current.pause();
         alarmAudio.current.currentTime = 0;
@@ -56,7 +61,7 @@ export default function Simulator() {
   // LOGIKA GAME LOOP & KEYBOARD
   useEffect(() => {
     const handleKeyDown = (e) => { 
-      if (e.repeat) return; // PERBAIKAN: Blokir auto-repeat OS agar tidak lag
+      if (e.repeat) return; // Blokir auto-repeat OS agar tidak lag
       if (e.code === 'Space') e.preventDefault(); 
       activeKeys.current.add(e.code); 
       setUiKeys(prev => ({ ...prev, [e.code]: true })); 
@@ -84,57 +89,107 @@ export default function Simulator() {
 
       setRods((prev) => {
         let nS = prev.safe; let nSh = prev.shim; let nR = prev.regulate;
-        const speed = 0.5;
-        const scramSpeed = 2.0; 
+        
+        // KALIBRASI KECEPATAN: Sesuai v = 0.0028044 m/s dan L = 0.38 m (0.0369% per step 50ms)
+        const speed = 1.845; 
+        // Kecepatan jatuh bebas gravitasi saat SCRAM
+        const scramSpeed = 5.0; 
 
-        // PERBAIKAN: Cek LATCHING SCRAM
+        // 1. Logika Jatuh Batang Kendali saat SCRAM aktif
         if (isScrammedRef.current) {
           const timeSinceTrip = Date.now() - tripTimeRef.current;
           
-          // Delay Mekanis 1.5 detik
+          // Delay Mekanis Katup Magnetik (1.5 detik)
           if (timeSinceTrip > 1500) {
             nS = Math.max(0, nS - scramSpeed);
             nSh = Math.max(0, nSh - scramSpeed);
             nR = Math.max(0, nR - scramSpeed);
           }
-
-          // Cek jika sudah menyentuh 0% sempurna, lepaskan kuncian SCRAM
-          if (nS === 0 && nSh === 0 && nR === 0) {
-            isScrammedRef.current = false;
-            setIsTripUI(false);
-            tripTimeRef.current = null;
-          }
         } else {
-          // Kendali Normal (Bisa naik terus tanpa tap-tap karena e.repeat diblokir)
+          // Kendali Manual Normal dengan Interlock
           if (keys.has('Space')) {
+            // Batang Safety: Tanpa syarat
             if (keys.has('KeyQ')) nS = Math.min(100, nS + speed);
             if (keys.has('KeyA')) nS = Math.max(0, nS - speed);
-            if (keys.has('KeyW')) nSh = Math.min(100, nSh + speed);
-            if (keys.has('KeyS')) nSh = Math.max(0, nSh - speed);
-            if (keys.has('KeyE')) nR = Math.min(100, nR + speed);
-            if (keys.has('KeyD')) nR = Math.max(0, nR - speed);
+
+            // Interlock Shim: Syarat Safe Rod harus 100%
+            if (nS >= 99.9) {
+              if (keys.has('KeyW')) nSh = Math.min(100, nSh + speed);
+              if (keys.has('KeyS')) nSh = Math.max(0, nSh - speed);
+            } else if (keys.has('KeyW') || keys.has('KeyS')) {
+              setWarning('INTERLOCK: Safe Rod harus 100%!');
+            }
+
+            // Interlock Regulate: Syarat Shim Rod harus ~50% (Range 45-55%)
+            if (nSh >= 45 && nSh <= 55) {
+              if (keys.has('KeyE')) nR = Math.min(100, nR + speed);
+              if (keys.has('KeyD')) nR = Math.max(0, nR - speed);
+            } else if (keys.has('KeyE') || keys.has('KeyD')) {
+              setWarning('INTERLOCK: Shim Rod harus di posisi ~50%!');
+            }
           }
         }
 
+        // 2. Hitung Fisika Reaktor untuk Frame Ini
         const res = stepSimulation({ safe: nS, shim: nSh, regulate: nR }, 0.05);
         
-        // Pemicu TRIP Otomatis (Jika tembus 1100W dan belum terkunci)
-        if (res.dayaWatt >= 1100 && !isScrammedRef.current) {
+        // 3. Pemicu TRIP Otomatis Sesuai Kapasitas Kartini (Overpower Trip @ 110% dari 100kW = 110.000W)
+        if (res.dayaWatt >= 110000 && !isScrammedRef.current) {
           isScrammedRef.current = true;
           setIsTripUI(true);
           tripTimeRef.current = Date.now();
         }
+
+        // 4. PERBAIKAN UTAMA INTERLOCK: SCRAM hanya lepas jika batang SUDAH di 0% DAN daya terbukti aman di bawah 110kW
+        if (isScrammedRef.current && nS === 0 && nSh === 0 && nR === 0 && res.dayaWatt < 110000) {
+          isScrammedRef.current = false;
+          setIsTripUI(false);
+          tripTimeRef.current = null;
+        }
+
+        // ============================================================
+        // UPDATE PENYIMPANAN RIWAYAT UNTUK GRAFIK KINETIKA TRANSIENT (2 MENIT / 120 DETIK)
+        // ============================================================
+        setChartHistory((prevHistory) => {
+          const nextHistory = [
+            ...prevHistory,
+            {
+              time: parseFloat(res.time.toFixed(1)),
+              dayaWatt: res.dayaWatt,
+              reaktivitas: res.reaktivitas,
+              dayaRelatif: res.dayaRelatif,
+              prekursor: res.prekursor
+            }
+          ];
+          
+          // Interval loop 50ms = 20 data/detik. 120 detik x 20 = 2400 titik data maksimum.
+          if (nextHistory.length > 2400) {
+            nextHistory.shift();
+          }
+          return nextHistory;
+        });
 
         setSimData(res);
         return { safe: nS, shim: nSh, regulate: nR };
       });
     }, 50);
 
-    return () => { window.removeEventListener('keydown', handleKeyDown); window.removeEventListener('keyup', handleKeyUp); clearInterval(interval); };
+    return () => { 
+      window.removeEventListener('keydown', handleKeyDown); 
+      window.removeEventListener('keyup', handleKeyUp); 
+      clearInterval(interval); 
+    };
   }, [tutorialStep, stepSimulation]);
 
   const calculatePosition = (v) => 9 + (v / 100) * 19;
-  const statusReaktor = isTripUI ? 'TRIP' : (simData.dayaWatt > 1.5 ? 'START' : 'STOP');
+  const statusReaktor = isTripUI ? 'SCRAM' : (simData.dayaWatt > 1.5 ? 'CRITICAL' : 'SHUTDOWN');
+
+  // Format fungsi display teks angka daya utama (Mematikan notasi e-4 saat reaktor mati/subkritis)
+  const formatDayaText = (watt) => {
+    if (watt < 0.01) return "0.0"; // Jika sangat kecil, kunci tampilan bersih di angka 0.0 W
+    if (watt < 1) return watt.toFixed(4); // Desimal halus biasa jika bernilai di bawah 1 Watt
+    return watt.toFixed(1); // Format normal jika daya sudah bernilai besar
+  };
 
   return (
     <div className="h-screen w-full bg-gray-950 flex flex-col font-sans text-white overflow-hidden p-0">
@@ -144,19 +199,23 @@ export default function Simulator() {
         <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4">
           <div className="bg-gray-900 border border-blue-500 p-6 rounded-xl max-w-lg shadow-2xl">
             <h2 className="text-xl font-bold text-blue-400 mb-4 text-center">
-              {tutorialStep === 1 ? "Langkah Operasi Awal" : "Sebab-Akibat & Keselamatan"}
+              {tutorialStep === 1 ? "Informasi Simulasi" : "Langkah Operasi"}
             </h2>
-            <div className="text-sm text-gray-300 space-y-4">
+            <div className="text-sm text-gray-300 space-y-4 text-justify">
               {tutorialStep === 1 ? (
                 <>
-                  <p>1. <strong>Tarik Safe Rod ke 100%:</strong> Tahan [SPACE] + Q. Ini adalah syarat wajib pengamanan sebelum reaktor bisa beroperasi.</p>
-                  <p>2. <strong>Kompensasi Shim Rod:</strong> Tahan [SPACE] + W. Tarik hingga ~50%. <strong>Catatan Penting:</strong> Grafik daya akan terlihat datar di awal karena reaktor berada dalam kondisi sangat sub-kritis (belum cukup neutron). Daya baru akan merespons ketika reaktivitas mendekati nilai positif.</p>
-                  <p>3. <strong>Kalibrasi Halus:</strong> Gunakan Regulate Rod (Tahan SPACE + E/D) untuk menaikkan/menurunkan daya perlahan.</p>
+                  <p>Simulator Reaktor Kartini dikembangkan sebagai media pembelajaran dan visualisasi operasi Reaktor Kartini, yaitu reaktor riset tipe TRIGA Mark II berdaya 100 kW termal dengan 68 elemen bakar, tiga batang kendali (Safety Rod, Shim Rod, dan Regulating Rod), serta sistem pendingin air tipe open pool.</p>
+                  <p>Seluruh data yang ditampilkan merupakan hasil simulasi numerik dan bukan data operasi reaktor secara real-time. Perhitungan menggunakan Persamaan Kinetika Titik (PKE), enam kelompok neutron tunda, serta model umpan balik reaktivitas akibat perubahan temperatur bahan bakar dan densitas pendingin.</p>
+                  <p>Simulator ini dikembangkan berdasarkan penelitian "Improvement of a Code-Based Kartini Reactor Simulator for Education and Training" dan ditujukan untuk mendukung kegiatan pendidikan, pelatihan, serta pemahaman prinsip operasi dan keselamatan reaktor nuklir.</p>
+                  <p> <strong>Catatan :</strong> Simulator masih dalam tahap pengembangan. Hasil simulasi merupakan pendekatan matematis dan dapat berbeda dari kondisi operasi Reaktor Kartini yang sebenarnya. </p>
                 </>
               ) : (
                 <>
-                  <p>4. <strong>Karakteristik Batang:</strong> Setiap batang memiliki "harga" (worth) berbeda. Safe Rod paling besar efeknya. Menarik batang terlalu cepat akan menyebabkan <em>Power Excursion</em> (lonjakan daya ekstrem).</p>
-                  <p>5. <strong>Protokol TRIP:</strong> Jika daya menembus 1100W, alarm aktif. Setelah jeda mekanis 1.5 detik, semua batang akan dijatuhkan otomatis (SCRAM) ke batas 0% untuk menghentikan reaksi fisi secara paksa.</p>
+                  <p>1. <strong>Tarik Safe Rod ke 100%:</strong> Tahan [SPACE] + Q. Ini adalah syarat wajib pengamanan sebelum reaktor bisa beroperasi.</p>
+                  <p>2. <strong>Kompensasi Shim Rod:</strong> Tahan [SPACE] + W. Tarik hingga ~50%.</p>
+                  <p>3. <strong>Operasional Regulating Rod:</strong> Tahan [SPACE] + E. Naikkan secara perlahan. Ini digunakan untuk mengatur daya reaktor secara lebih presisi.</p>
+                  <p>4. <strong>Protokol SCRAM:</strong> Jika daya menembus 110kW (110.000W), alarm aktif. Setelah jeda mekanis 1.5 detik, semua batang akan dijatuhkan otomatis (SCRAM) ke batas 0% untuk menghentikan reaksi fisi secara paksa.</p>
+
                 </>
               )}
             </div>
@@ -177,7 +236,7 @@ export default function Simulator() {
             onClick={() => setShowAlert(false)} 
             className="absolute top-1 right-2 font-bold text-white hover:text-black bg-red-800 rounded px-2"
           >X</button>
-          <h2 className="text-center font-black text-white text-lg tracking-tighter">⚠ REACTOR TRIP ⚠</h2>
+          <h2 className="text-center font-black text-white text-lg tracking-tighter">⚠ REACTOR SCRAM ⚠</h2>
           <p className="text-[0.65rem] text-center font-bold text-white uppercase mt-1">Automatic SCRAM Active</p>
         </div>
       )}
@@ -232,7 +291,7 @@ export default function Simulator() {
                 <span className="bg-gray-800 text-[0.5rem] px-1.5 py-0.5 rounded-full border border-gray-600 cursor-help font-bold text-yellow-300">?</span>
                 <div className="hidden group-hover:block absolute top-full left-0 mt-1 w-48 bg-gray-900 border border-yellow-500 p-2 rounded shadow-xl text-left z-50">
                   <h3 className="text-yellow-400 font-bold text-[0.65rem] mb-1">Rod Drive Mechanism</h3>
-                  <p className="text-[0.55rem] text-gray-300">Motor stepper penarik batang. Dilengkapi magnetic clutch pelepas batang otomatis jika arus diputus (TRIP).</p>
+                  <p className="text-[0.55rem] text-gray-300">Motor stepper penarik batang. Dilengkapi magnetic clutch pelepas batang otomatis jika arus diputus (SCRAM).</p>
                 </div>
               </div>
 
@@ -257,7 +316,11 @@ export default function Simulator() {
           
           {activePOV === 'core' && <Core3D />}
           {activePOV === 'cooling' && <CrossSection3D />}
-          {activePOV === 'grafik' && <FullChart data={simData} />}
+          
+          {/* ============================================================
+              PASSING DATA ARRAY HISTORY KE KOMPONEN FULLCHART
+             ============================================================ */}
+          {activePOV === 'grafik' && <FullChart historyData={chartHistory} currentData={simData} />}
 
           {warning && (
             <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-red-900/80 border border-red-500 px-4 py-1.5 rounded-full text-xs animate-pulse z-50">
@@ -352,13 +415,13 @@ export default function Simulator() {
 
           <div className={`p-2 rounded border text-center transition-colors flex-shrink-0 ${isTripUI ? 'bg-red-900 border-red-500' : 'bg-gray-800 border-gray-700'}`}>
             <h2 className="text-[0.55rem] text-gray-400 uppercase tracking-wider">Status Reaktor</h2>
-            <div className={`text-xl font-black tracking-widest ${isTripUI ? 'text-red-500' : (statusReaktor === 'START' ? 'text-emerald-400' : 'text-gray-500')}`}>
+            <div className={`text-xl font-black tracking-widest ${isTripUI ? 'text-red-500' : (statusReaktor === 'CRITICAL' ? 'text-emerald-400' : 'text-gray-500')}`}>
               {statusReaktor}
             </div>
           </div>
 
           <div className="flex-1 bg-black rounded border border-gray-700 p-2 flex flex-col relative min-h-0">
-             
+              
              {/* HEADER DAYA AKTUAL + HOTSPOT RUMUS */}
              <div className="flex justify-between items-center mb-1 border-b border-gray-800 pb-1 flex-shrink-0">
                <h2 className="text-[0.65rem] font-bold text-cyan-400">Daya Aktual</h2>
@@ -372,7 +435,7 @@ export default function Simulator() {
                      P(t) = P(0) × n(t)
                    </div>
                    <p className="text-[0.55rem] text-gray-400">
-                     <strong className="text-gray-300">P(0)</strong> = Daya Awal (1000W)<br/>
+                     <strong className="text-gray-300">P(0)</strong> = Daya Nominal (100kW)<br/>
                      <strong className="text-gray-300">n(t)</strong> = Daya relatif dari integrasi pers. differensial Point Kinetics.
                    </p>
                  </div>
@@ -381,7 +444,7 @@ export default function Simulator() {
 
              <div className="flex-1 flex flex-col items-center justify-center">
                 <span className={`text-4xl font-mono font-bold ${isTripUI ? 'text-red-500' : 'text-cyan-400'}`}>
-                  {simData.dayaWatt.toFixed(1)} <span className="text-sm text-gray-500">W</span>
+                  {formatDayaText(simData.dayaWatt)} <span className="text-sm text-gray-500">W</span>
                 </span>
                 <span className="text-[0.55rem] text-gray-500 mt-2 font-mono">
                   Reaktivitas (ρ): {simData.reaktivitas.toFixed(6)}

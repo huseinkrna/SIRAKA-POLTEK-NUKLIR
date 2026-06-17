@@ -1,66 +1,33 @@
+// src/data/historyData.js
+
+// src/data/historyData.js
+
 export const historyData = [
   {
-    id: 1,
-    year: "1960 - 1971",
-    title: "Fondasi Teknologi TRIGA di Indonesia",
-    description: "Cikal bakal teknologi nuklir nasional dimulai dengan pengoperasian Reaktor TRIGA Mark II di Bandung berkapasitas 250 kW. Pada 1971, dilakukan peningkatan kapasitas (upgrading) menjadi 1000 kW, yang kemudian menyisakan komponen inti (core) sebagai aset strategis untuk pengembangan fasilitas riset berikutnya.",
-    hasToggle: true,
-    images: {
-      sebelum: "/assets/images/sejarah/triga-sebelum-1960.jpg",
-      sesudah: "/assets/images/sejarah/triga-sesudah-1971.jpg"
-    }
+    id: "fase-1",
+    phaseLabel: "Fase 1: Skala & Ambisi",
+    title: "Pondasi Sains Nusantara",
+    description: "Ini bukan sekadar monumen, melainkan laboratorium raksasa. Reaktor Kartini didirikan sebagai tulang punggung riset dan pendidikan nuklir di Indonesia, membuka jalan bagi inovasi masa depan.",
+    technicalData: "Spesifikasi Inti: Tipe TRIGA Mark II. Daya maksimal 100 kW (Termal). Mulai beroperasi dan diresmikan pada 1 Maret 1979.",
+    imagePath: "/assets/images/sejarah/01-gedung-utara.jpeg", // Path pemanggilan yang benar
+    imageAlt: "Gedung Reaktor Kartini"
   },
   {
-    id: 2,
-    year: "1974 - 1985",
-    title: "Pembangunan dan Kritikalitas Pertama",
-    description: "Melalui SK Dirjen BATAN No. 119/DJ/13/XI/1974, dibentuk Tim Pengembangan Reaktor Yogyakarta. Fase ini menandai integrasi teknis yang unik:\n• Rancang Bangun: Mengintegrasikan core TRIGA Mark-II 250 kW dari Bandung dengan tangki reaktor IRT-2000 dari Serpong.\n• Pencapaian: Reaktor mencapai kondisi Kritikal Pertama pada 25 Januari 1979.\n• Peresmian: Diresmikan oleh Presiden RI pada 1 Maret 1979 dengan nama resmi Reaktor Kartini.",
-    hasToggle: true,
-    images: {
-      sebelum: "/assets/images/sejarah/pembangunan-sebelum-1974.jpg",
-      sesudah: "/assets/images/sejarah/pembangunan-sesudah-1985.jpg"
-    }
+    id: "fase-2",
+    phaseLabel: "Fase 2: Jantung Reaktor",
+    title: "Saksi Bisu Radiasi Cherenkov",
+    description: "Di dalam kedalaman air murni, reaksi berantai memancarkan cahaya biru yang khas. Ini adalah wujud nyata dari sains, tempat material diuji untuk berbagai kebutuhan industri dan medis.",
+    technicalData: "Data Teknis: Menggunakan bahan bakar UZrH (Uranium Zirconium Hydride). Cahaya biru (Radiasi Cherenkov) terjadi karena partikel bermuatan bergerak lebih cepat dari kecepatan cahaya di dalam medium pendingin air ringan (H2O).",
+    imagePath: "/assets/images/sejarah/04-bahan-bakar-biru.jpeg", // Path pemanggilan yang benar
+    imageAlt: "Penjelasan bahan bakar reaktor"
   },
   {
-    id: 3,
-    year: "1981 - 1984",
-    title: "Optimalisasi Daya dan Diversifikasi Fasilitas",
-    description: "Reaktor Kartini meningkatkan performa operasionalnya ke level nominal 100 kW pada tahun 1981. Disusul pada 1984 dengan pengintegrasian fasilitas Subcritical Assembly (Uranium Alam H2O) pada salah satu beamport, memperluas kapabilitas riset material dan instrumentasi nuklir.",
-    hasToggle: true,
-    images: {
-      sebelum: "/assets/images/sejarah/optimalisasi-sebelum-1981.jpg",
-      sesudah: "/assets/images/sejarah/optimalisasi-sesudah-1984.jpg"
-    }
-  },
-  {
-    id: 4,
-    year: "2013",
-    title: "Transformasi Institusional",
-    description: "Seiring dengan perkembangan struktur organisasi riset nasional, entitas pengelola mengalami beberapa transformasi strategis, mulai dari PPNY hingga menjadi Pusat Sains dan Teknologi Akselerator (PSTA), guna menyesuaikan dengan dinamika kebutuhan teknologi energi dan material maju. (PPBMI -> PPNY -> P3TM -> PTAPB -> PSTA)",
-    hasToggle: false,
-    images: {
-      default: "/assets/images/sejarah/transformasi-2013.jpg"
-    }
-  },
-  {
-    id: 5,
-    year: "2016 - 2017",
-    title: "Penguatan Keandalan dan Manajemen Penuaan",
-    description: "Memasuki usia operasional ke-37, Reaktor Kartini membuktikan keandalannya melalui uji operasi kontinu selama 100 jam. Untuk menjaga standar keselamatan tinggi, pada tahun 2017 dilakukan peremajaan sistem pendingin sekunder dan cooling tower sebagai bagian dari program Aging Management.",
-    hasToggle: true,
-    images: {
-      sebelum: "/assets/images/sejarah/keandalan-sebelum-2016.jpg",
-      sesudah: "/assets/images/sejarah/keandalan-sesudah-2017.jpg"
-    }
-  },
-  {
-    id: 6,
-    year: "Sekarang",
-    title: "Transformasi Menuju Pusat Pendidikan Global dan Digitalisasi Nuklir",
-    description: "Reaktor Kartini mengukuhkan perannya sebagai pusat keunggulan (Center of Excellence) dalam riset dan pendidikan nuklir di Asia-Pasifik melalui optimalisasi fungsi TRIGA (Training, Research, Isotope Production by General Atomic):\n• Riset Spesifik & Analisis Aktivasi Neutron (AAN)\n• Sentralisasi Pendidikan Tinggi\n• Internet Reactor Laboratory (IRL)\n• Modernisasi Kurikulum & Digitalisasi",
-    hasToggle: false,
-    images: {
-      default: "/assets/images/sejarah/transformasi-sekarang.jpg"
-    }
+    id: "fase-3",
+    phaseLabel: "Fase 3: Validasi & Kredibilitas",
+    title: "Diakui oleh Ikon Teknologi",
+    description: "Fasilitas ini menjadi pusat perhatian para pionir teknologi bangsa. Kredibilitas riset yang dihasilkan di sini menjadi standar bagi pengembangan teknologi presisi di Indonesia.",
+    technicalData: "Dokumentasi Historis: Kunjungan resmi dan inspeksi oleh Menteri Riset dan Teknologi B.J. Habibie menegaskan peran strategis reaktor ini dalam peta jalan penguasaan teknologi tinggi nasional.",
+    imagePath: "/assets/images/sejarah/05-kunjungan-habibie.jpeg", // Path pemanggilan yang benar
+    imageAlt: "Kunjungan BJ Habibie"
   }
 ];

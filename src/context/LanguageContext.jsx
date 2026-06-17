@@ -1,11 +1,10 @@
-import { createContext, useState, useContext } from 'react';
+// src/context/LanguageContext.jsx
+import { createContext, useContext, useState } from "react";
 
-// Membuat wadah Context
 const LanguageContext = createContext();
 
-// Membuat Provider untuk membungkus aplikasi
 export const LanguageProvider = ({ children }) => {
-  const [lang, setLang] = useState('ID'); // Default bahasa Indonesia
+  const [lang, setLang] = useState("ID"); // ID atau EN
 
   return (
     <LanguageContext.Provider value={{ lang, setLang }}>
@@ -14,5 +13,4 @@ export const LanguageProvider = ({ children }) => {
   );
 };
 
-// Custom hook agar halaman lain gampang memanggilnya
 export const useLanguage = () => useContext(LanguageContext);
