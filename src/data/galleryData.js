@@ -4,7 +4,7 @@ export const galleryItems = [
     id: 1,
     image: "/assets/images/gallery/1-pembangunan-reaktor.jpeg",
     caption: {
-      id: "Pembangunan reaktor Kartini dimulai pada akhir tahun 1974",
+      id: "Penggalian tanah untuk peletakan pondasi dan paku bumi yang dilakukan oleh pekerja secara manual",
       en: "Construction of the Kartini reactor began in late 1974"
     }
   },
@@ -12,7 +12,7 @@ export const galleryItems = [
     id: 2,
     image: "/assets/images/gallery/2-dibangun-oleh-tim.jpeg",
     caption: {
-      id: "Pelaksana pembangunan seluruhnya ditangani oleh tenaga-tenaga ahli Indonesia",
+      id: "Foto personil tim Pendirian sesuai SK Dirjen BATAN no 119/DJ/13/X/1974 yang diketuai oleh Iyos Subki dan beberapa anggota tim ketika pengecekan pembangunan reaktor",
       en: "The construction was entirely handled by Indonesian experts"
     }
   },
@@ -20,7 +20,7 @@ export const galleryItems = [
     id: 3,
     image: "/assets/images/gallery/3-tim-pembangunan-reaktor.jpeg",
     caption: {
-      id: "Team Pembangunan Reaktor yang dibentuk menurut SK Dirjen BATAN No. 119/DJ/13/XI/1974 tertanggal 13 Nopember 1974",
+      id: "Pemantauan proses pembuatan dan pemasangan pondasi pembangunan reaktor oleh tim pendiri",
       en: "The Reactor Development Team formed under BATAN Director General Decree No. 119/DJ/13/XI/1974 dated November 13, 1974"
     }
   },
@@ -28,7 +28,7 @@ export const galleryItems = [
     id: 4,
     image: "/assets/images/gallery/4-rangka-besi.jpeg",
     caption: {
-      id: "Proses Pembangunan Rangka Besi pada Teras Reaktor Kartini",
+      id: "Proses pemasangan rangka besi di bagian teras reaktor, dalam pemasangan ini Ir. Harsoyo yang merupakan alumni dari FT UGM memiliki peranan penting dalam pembangunan.",
       en: "Construction process of the iron frame on the Kartini Reactor Core"
     }
   },
@@ -52,7 +52,7 @@ export const galleryItems = [
     id: 7,
     image: "/assets/images/gallery/7-dasar-bejana.jpeg",
     caption: {
-      id: "Kondisi Dasar Bejana Reaktor Kartini",
+      id: "Teknisi Abdul Rozak sedang melakukan pemeriksaan pada bagian dasar bejana reaktor atau Bellows",
       en: "Bottom Condition of the Kartini Reactor Vessel"
     }
   },
@@ -60,7 +60,7 @@ export const galleryItems = [
     id: 8,
     image: "/assets/images/gallery/8-teras-reaktor.jpeg",
     caption: {
-      id: "Hasil Akhir Teras Reaktor Sebelum Dipasang",
+      id: "Struktur penyangga teras dan grafit reflektor meja penyangga (pedestal) sebelum dipasang pada Benjana reaktor",
       en: "Final Core Result Before Installation"
     }
   },
@@ -68,7 +68,7 @@ export const galleryItems = [
     id: 9,
     image: "/assets/images/gallery/9-teras-berhasil.jpeg",
     caption: {
-      id: "Teras Reaktor Berhasil Dipasangkan",
+      id: "Proses pengelasan dan pemasangan komponen Beam Bot pada Benjana reaktor. Beam pot merupakan komponen yang memungkinkan akses keluar bagi berkas radiasi, terutama neutron, dari teras reaktor.",
       en: "Reactor Core Successfully Installed"
     }
   },
@@ -76,7 +76,7 @@ export const galleryItems = [
     id: 10,
     image: "/assets/images/gallery/10-angkut-bahan-bakar.jpeg",
     caption: {
-      id: "Proses Pengangkutan Bahan Bakar Reaktor",
+      id: "Proses pengangkutan bahan bakar guna pengoperasian reaktor Kartini. Bahan bakar ini diambil dari reaktor Nuklir Triga Mark Bandung. Dalam foto ini bahan reaktor satu truck ini beratnya mencapai 2,5 ton.",
       en: "Reactor Fuel Transport Process"
     }
   },
@@ -148,7 +148,7 @@ export const galleryItems = [
     id: 19,
     image: "/assets/images/gallery/19-suharto.jpeg",
     caption: {
-      id: "Peresmian Oleh Presiden Soeharto",
+      id: "Sambutan Presiden Soeharto pada upacara peresmian reaktor nuklir kartini, Presiden Soeharto",
       en: "Inauguration by President Soeharto"
     }
   },
