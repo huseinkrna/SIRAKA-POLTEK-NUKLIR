@@ -1,5 +1,37 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Line as ChartLine } from 'react-chartjs-2';
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
+
+const miniChartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  animation: false, 
+  elements: { point: { radius: 0 } },
+  plugins: {
+    legend: { display: false },
+    tooltip: { enabled: false } 
+  },
+  scales: {
+    x: { 
+      type: 'linear',
+      min:0,
+      display: true, // DIUBAH MENJADI TRUE: Agar garis kisi waktu dan angka detik muncul
+      grid: { color: '#374151', drawBorder: false },
+      ticks: { 
+        color: '#9CA3AF', 
+        font: { size: 9 },
+        callback: (value) => `${value}s` // Menambahkan akhiran 's' (detik) pada sumbu x
+      }
+    },
+    y: { 
+      min: 0,
+      grid: { color: '#374151', drawBorder: false },
+      ticks: { color: '#9CA3AF', font: { size: 9 } }
+    }
+  }
+};
 
 // Import Komponen 
 import Core3D from '../components/simulator/Core3D';
@@ -22,9 +54,6 @@ export default function Simulator() {
     time: 0, dayaRelatif: 1.0, dayaWatt: 0.1, reaktivitas: 0, prekursor: [0,0,0,0,0,0]
   });
 
-  // ============================================================
-  // STATE BARU: Menyimpan riwayat data untuk visualisasi grafik
-  // ============================================================
   const [chartHistory, setChartHistory] = useState([]);
 
   const activeKeys = useRef(new Set());
@@ -32,36 +61,31 @@ export default function Simulator() {
 
   const alarmAudio = useRef(null);
   
-  // REFERENSI SCRAM (Latching System untuk menahan SCRAM sampai benar-benar aman)
   const isScrammedRef = useRef(false);
   const tripTimeRef = useRef(null); 
-  const [isTripUI, setIsTripUI] = useState(false); // State khusus untuk render UI
+  const [isTripUI, setIsTripUI] = useState(false); 
 
-  // Inisialisasi Audio
   useEffect(() => {
     alarmAudio.current = new Audio('/assets/alarm.mp3');
     alarmAudio.current.loop = true;
   }, []);
 
-  // MANAJEMEN ALARM & POPUP BERDASARKAN LATCHING UI
   useEffect(() => {
     if (isTripUI) {
       if (!showAlert) setShowAlert(true); 
       alarmAudio.current?.play().catch(() => {});
     } else {
-      setShowAlert(false); // Tutup popup otomatis saat SCRAM selesai aman
+      setShowAlert(false); 
       if (alarmAudio.current) {
         alarmAudio.current.pause();
         alarmAudio.current.currentTime = 0;
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isTripUI]);
 
-  // LOGIKA GAME LOOP & KEYBOARD
   useEffect(() => {
     const handleKeyDown = (e) => { 
-      if (e.repeat) return; // Blokir auto-repeat OS agar tidak lag
+      if (e.repeat) return; 
       if (e.code === 'Space') e.preventDefault(); 
       activeKeys.current.add(e.code); 
       setUiKeys(prev => ({ ...prev, [e.code]: true })); 
@@ -89,60 +113,41 @@ export default function Simulator() {
 
       setRods((prev) => {
         let nS = prev.safe; let nSh = prev.shim; let nR = prev.regulate;
-        
-        // KALIBRASI KECEPATAN: Sesuai v = 0.0028044 m/s dan L = 0.38 m (0.0369% per step 50ms)
         const speed = 1.845; 
-        // Kecepatan jatuh bebas gravitasi saat SCRAM
         const scramSpeed = 5.0; 
 
-        // 1. Logika Jatuh Batang Kendali saat SCRAM aktif
         if (isScrammedRef.current) {
           const timeSinceTrip = Date.now() - tripTimeRef.current;
-          
-          // Delay Mekanis Katup Magnetik (1.5 detik)
           if (timeSinceTrip > 1500) {
             nS = Math.max(0, nS - scramSpeed);
             nSh = Math.max(0, nSh - scramSpeed);
             nR = Math.max(0, nR - scramSpeed);
           }
         } else {
-          // Kendali Manual Normal tanpa Interlock
           if (keys.has('Space')) {
-            // Batang Safety: Tanpa syarat
             if (keys.has('KeyQ')) nS = Math.min(100, nS + speed);
             if (keys.has('KeyA')) nS = Math.max(0, nS - speed);
-
-            // Interlock Shim: Syarat Safe Rod harus 100%
             if (keys.has('KeyW')) nSh = Math.min(100, nSh + speed);
             if (keys.has('KeyS')) nSh = Math.max(0, nSh - speed);
-
-
-            // Interlock Regulate: Syarat Shim Rod harus ~50% (Range 45-55%)
             if (keys.has('KeyE')) nR = Math.min(100, nR + speed);
             if (keys.has('KeyD')) nR = Math.max(0, nR - speed);
           }
         }
 
-        // 2. Hitung Fisika Reaktor untuk Frame Ini
         const res = stepSimulation({ safe: nS, shim: nSh, regulate: nR }, 0.05);
         
-        // 3. Pemicu TRIP Otomatis Sesuai Kapasitas Kartini (Overpower Trip @ 110% dari 100kW = 110.000W)
         if (res.dayaWatt >= 110000 && !isScrammedRef.current) {
           isScrammedRef.current = true;
           setIsTripUI(true);
           tripTimeRef.current = Date.now();
         }
 
-        // 4. PERBAIKAN UTAMA INTERLOCK: SCRAM hanya lepas jika batang SUDAH di 0% DAN daya terbukti aman di bawah 110kW
         if (isScrammedRef.current && nS === 0 && nSh === 0 && nR === 0 && res.dayaWatt < 110000) {
           isScrammedRef.current = false;
           setIsTripUI(false);
           tripTimeRef.current = null;
         }
 
-        // ============================================================
-        // UPDATE PENYIMPANAN RIWAYAT UNTUK GRAFIK KINETIKA TRANSIENT (2 MENIT / 120 DETIK)
-        // ============================================================
         setChartHistory((prevHistory) => {
           const nextHistory = [
             ...prevHistory,
@@ -154,8 +159,6 @@ export default function Simulator() {
               prekursor: res.prekursor
             }
           ];
-          
-          // Interval loop 50ms = 20 data/detik. 120 detik x 20 = 2400 titik data maksimum.
           if (nextHistory.length > 2400) {
             nextHistory.shift();
           }
@@ -177,11 +180,10 @@ export default function Simulator() {
   const calculatePosition = (v) => 9 + (v / 100) * 19;
   const statusReaktor = isTripUI ? 'SCRAM' : (simData.dayaWatt > 1.5 ? 'CRITICAL' : 'SHUTDOWN');
 
-  // Format fungsi display teks angka daya utama (Mematikan notasi e-4 saat reaktor mati/subkritis)
   const formatDayaText = (watt) => {
-    if (watt < 0.01) return "0.0"; // Jika sangat kecil, kunci tampilan bersih di angka 0.0 W
-    if (watt < 1) return watt.toFixed(4); // Desimal halus biasa jika bernilai di bawah 1 Watt
-    return watt.toFixed(1); // Format normal jika daya sudah bernilai besar
+    if (watt < 0.01) return "0.0"; 
+    if (watt < 1) return watt.toFixed(4); 
+    return watt.toFixed(1); 
   };
 
   return (
@@ -208,7 +210,6 @@ export default function Simulator() {
                   <p>2. <strong>Kompensasi Shim Rod:</strong> Tahan [SPACE] + W.</p>
                   <p>3. <strong>Operasional Regulating Rod:</strong> Tahan [SPACE] + E. Naikkan secara perlahan. Ini digunakan untuk mengatur daya reaktor.</p>
                   <p>4. <strong>Protokol SCRAM:</strong> Jika daya menembus 110kW (110.000W), alarm aktif. Setelah jeda mekanis 1.5 detik, semua batang akan dijatuhkan otomatis (SCRAM) ke batas 0% untuk menghentikan reaksi fisi secara paksa.</p>
-
                 </>
               )}
             </div>
@@ -309,10 +310,6 @@ export default function Simulator() {
           
           {activePOV === 'core' && <Core3D />}
           {activePOV === 'cooling' && <CrossSection3D />}
-          
-          {/* ============================================================
-              PASSING DATA ARRAY HISTORY KE KOMPONEN FULLCHART
-             ============================================================ */}
           {activePOV === 'grafik' && <FullChart historyData={chartHistory} currentData={simData} />}
 
           {warning && (
@@ -353,7 +350,7 @@ export default function Simulator() {
             </div>
             
             <div className="grid grid-cols-3 gap-1.5 text-center">
-              {/* Kolom Safe */}
+              {/* Safe */}
               <div className="flex flex-col space-y-1">
                 <span className="text-[0.55rem] font-bold text-gray-400 uppercase">Safe (Q/A)</span>
                 <button 
@@ -370,7 +367,7 @@ export default function Simulator() {
                 >▼</button>
               </div>
 
-              {/* Kolom Shim */}
+              {/* Shim */}
               <div className="flex flex-col space-y-1">
                 <span className="text-[0.55rem] font-bold text-gray-400 uppercase">Shim (W/S)</span>
                 <button 
@@ -387,7 +384,7 @@ export default function Simulator() {
                 >▼</button>
               </div>
 
-              {/* Kolom Regulate */}
+              {/* Regulate */}
               <div className="flex flex-col space-y-1">
                 <span className="text-[0.55rem] font-bold text-gray-400 uppercase">Reg (E/D)</span>
                 <button 
@@ -413,36 +410,35 @@ export default function Simulator() {
             </div>
           </div>
 
+          {/* PANEL GRAFIK KANAN BAWAH (REVISI FIX) */}
           <div className="flex-1 bg-black rounded border border-gray-700 p-2 flex flex-col relative min-h-0">
-              
-             {/* HEADER DAYA AKTUAL + HOTSPOT RUMUS */}
-             <div className="flex justify-between items-center mb-1 border-b border-gray-800 pb-1 flex-shrink-0">
-               <h2 className="text-[0.65rem] font-bold text-cyan-400">Daya Aktual</h2>
-               
-               <div className="relative group cursor-help z-50">
-                 <span className="bg-gray-800 text-cyan-300 rounded-full w-4 h-4 flex items-center justify-center text-[0.55rem] font-bold border border-cyan-800 hover:bg-cyan-600 hover:text-white transition">?</span>
-                 <div className="hidden group-hover:block absolute right-0 bottom-full mb-2 w-56 bg-gray-900 border border-cyan-500 p-3 rounded-lg shadow-2xl text-left">
-                   <h3 className="text-cyan-400 font-bold text-[0.65rem] mb-1">Perhitungan Daya (P)</h3>
-                   <p className="text-[0.55rem] text-gray-300 mb-1">Representasi energi termal yang dihasilkan oleh reaksi fisi berantai.</p>
-                   <div className="bg-black p-1.5 rounded border border-gray-700 font-mono text-[0.6rem] text-emerald-300 mb-1">
-                     P(t) = P(0) × n(t)
-                   </div>
-                   <p className="text-[0.55rem] text-gray-400">
-                     <strong className="text-gray-300">P(0)</strong> = Daya Nominal (100kW)<br/>
-                     <strong className="text-gray-300">n(t)</strong> = Daya relatif dari integrasi pers. differensial Point Kinetics.
-                   </p>
-                 </div>
-               </div>
-             </div>
+            {/* Header */}
+            <div className="flex justify-between items-center mb-1 border-b border-gray-800 pb-1 flex-shrink-0">
+              <h2 className="text-[0.65rem] font-bold text-cyan-400">GRAFIK DAYA AKTUAL (W) VS WAKTU</h2>
+              <span className="text-[0.6rem] text-white font-mono font-bold">
+                {simData.dayaWatt.toFixed(1)} W
+              </span>
+            </div>
 
-             <div className="flex-1 flex flex-col items-center justify-center">
-                <span className={`text-4xl font-mono font-bold ${isTripUI ? 'text-red-500' : 'text-cyan-400'}`}>
-                  {formatDayaText(simData.dayaWatt)} <span className="text-sm text-gray-500">W</span>
-                </span>
-                <span className="text-[0.55rem] text-gray-500 mt-2 font-mono">
-                  Reaktivitas (ρ): {simData.reaktivitas.toFixed(6)}
-                </span>
-             </div>
+            {/* Area grafik bersih tanpa double nesting container */}
+            <div className="flex-1 w-full min-h-0">
+              <ChartLine 
+                options={miniChartOptions} 
+                data={{
+                  datasets: [{
+                    data: chartHistory.map(d => ({ x: d.time, y: d.dayaWatt })),
+                    borderColor: '#22d3ee',
+                    borderWidth: 1.5,
+                    tension: 0.1
+                  }]
+                }} 
+              />
+            </div>
+
+            {/* Footer Reaktivitas */}
+            <div className="text-[0.5rem] text-gray-500 font-mono text-center mt-1">
+              ρ: {simData.reaktivitas.toFixed(6)}
+            </div>
           </div>
 
         </div>
